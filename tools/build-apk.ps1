@@ -50,14 +50,27 @@ Write-Output ''
 Write-Output '=== APK output ==='
 
 # AGP's own variant naming is verbose; give the deliverables stable, readable names.
+# The version comes from output-metadata.json rather than being hardcoded - a hardcoded
+# map silently mislabels every build after the first version bump.
 $apkRoot = Join-Path $root 'app\build\outputs\apk'
-$renames = @{
-    'release' = 'TvApkInstaller-release-1.0.0.apk'
-    'debug'   = 'TvApkInstaller-debug-1.0.0.apk'
-}
 Get-ChildItem -Path $apkRoot -Recurse -Filter '*.apk' | ForEach-Object {
     $kind = if ($_.FullName -match '\\release\\') { 'release' } else { 'debug' }
-    $target = Join-Path $_.DirectoryName $renames[$kind]
+
+    $version = $null
+    $meta = Join-Path $_.DirectoryName 'output-metadata.json'
+    if (Test-Path $meta) {
+        try {
+            $version = (Get-Content $meta -Raw | ConvertFrom-Json).elements[0].versionName
+        } catch {
+            $version = $null
+        }
+    }
+    if (-not $version) {
+        Write-Warning "no versionName in $meta - leaving $($_.Name) as-is"
+        return
+    }
+
+    $target = Join-Path $_.DirectoryName "TvApkInstaller-$kind-$version.apk"
     if ($_.FullName -ne $target) { Move-Item -Path $_.FullName -Destination $target -Force }
 }
 

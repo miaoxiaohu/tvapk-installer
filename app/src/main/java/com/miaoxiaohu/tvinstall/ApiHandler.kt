@@ -112,6 +112,7 @@ class ApiHandler(
             )
             .put("lastEvent", InstallEvents.lastMessage ?: JSONObject.NULL)
             .put("autoStart", config.autoStart)
+            .put("system", SystemProbe.toJson(context))
         return HttpResponse.json(200, json.toString())
     }
 

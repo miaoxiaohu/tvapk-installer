@@ -9,14 +9,18 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /**
- * Hands an uploaded APK to the system package installer.
+ * Hands an uploaded APK to the system package installer, preferring the few routes that never
+ * draw the firmware's confirmation page.
  *
- * The primary path is a plain ACTION_VIEW on a content:// URI, which is what every TV
- * firmware handles: the user sees the normal install screen and the usual "allow from
- * this source" prompt. A PackageInstaller session is only used when no activity can
- * handle ACTION_VIEW at all.
+ * Priority:
+ *   1. root shell -> "pm install" as uid 0, no UI at all
+ *   2. INSTALL_PACKAGES privilege -> PackageInstaller session commits silently
+ *   3. plain ACTION_VIEW -> the firmware install screen, one tap on the remote
+ *
+ * Only the last one needs a person, so the first two are worth probing for every install.
  */
 object ApkInstaller {
 
@@ -44,6 +48,14 @@ object ApkInstaller {
     fun install(activity: Activity, file: File): Outcome {
         if (!file.isFile) return Outcome.Failed("文件不存在")
 
+        // Silent routes first. "pm install" as uid 0 draws no UI whatsoever, and a session
+        // commit is silent too once we hold INSTALL_PACKAGES - PackageInstaller only answers
+        // STATUS_PENDING_USER_ACTION when the caller lacks that privilege.
+        if (SystemProbe.canRunSu() && installViaRoot(file)) return Outcome.Launched
+        if (SystemProbe.hasSilentInstallPermission(activity)) {
+            return installViaSession(activity, file, null)
+        }
+
         val uri = uriFor(activity, file)
         val view = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, ApkFileProvider.APK_MIME)
@@ -62,8 +74,26 @@ object ApkInstaller {
     }
 
     /**
-     * Silent commit path. It still needs the "install unknown apps" grant for our own
-     * app, but no interactive confirmation - used only when ACTION_VIEW has no handler.
+     * True silent install through a root shell. `pm install` runs in the system_server
+     * install path, so it never raises STATUS_PENDING_USER_ACTION and never shows the
+     * firmware's confirmation page.
+     */
+    private fun installViaRoot(file: File): Boolean = try {
+        val p = ProcessBuilder("su", "-c", "pm install -r \"${file.absolutePath}\"")
+            .redirectErrorStream(true)
+            .start()
+        val finished = p.waitFor(180, TimeUnit.SECONDS)
+        val out = if (finished) p.inputStream.bufferedReader().use { it.readText() } else ""
+        p.destroyForcibly()
+        finished && out.contains("Success")
+    } catch (t: Throwable) {
+        false
+    }
+
+    /**
+     * Session commit. Fully silent when we hold INSTALL_PACKAGES; otherwise PackageInstaller
+     * hands back STATUS_PENDING_USER_ACTION and InstallEvents shows its confirmation Intent -
+     * it refuses to install quietly on our behalf.
      */
     private fun installViaSession(
         activity: Activity,

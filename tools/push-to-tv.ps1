@@ -18,7 +18,18 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-if (-not $Apk) { $Apk = Join-Path $root 'app\build\outputs\apk\release\TvApkInstaller-release-1.0.0.apk' }
+if (-not $Apk) {
+    # Newest release build, whatever it is currently called. A hardcoded filename here goes
+    # stale the moment the versionName changes and silently stops finding the build.
+    $candidates = Get-ChildItem -Path (Join-Path $root 'app\build\outputs\apk\release') -Filter '*.apk' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending
+    if ($candidates) {
+        $Apk = $candidates[0].FullName
+    } else {
+        Write-Host "没有找到 release APK，先跑 tools\build-apk.ps1" -ForegroundColor Red
+        exit 1
+    }
+}
 if (-not (Test-Path $Apk)) { Write-Host "找不到 APK: $Apk" -ForegroundColor Red; exit 1 }
 
 $base = "http://${Device}:$Port"
