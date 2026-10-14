@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -50,6 +51,7 @@ class MainActivity : Activity() {
     private lateinit var btnToggle: Button
     private lateinit var btnRegenPin: Button
     private lateinit var btnGrant: Button
+    private lateinit var btnClear: Button
     private lateinit var pendingContainer: LinearLayout
     private lateinit var installedContainer: LinearLayout
     private lateinit var scroll: ScrollView
@@ -66,6 +68,10 @@ class MainActivity : Activity() {
     private var pendingSignature: String? = null
     private var installedSignature: String? = null
 
+    /** Action buttons per pending / installed row, collected while rendering for [linkFocusChain]. */
+    private var pendingStops: List<List<View>> = emptyList()
+    private var installedStops: List<List<View>> = emptyList()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         config = AppConfig(this)
@@ -76,8 +82,7 @@ class MainActivity : Activity() {
         btnToggle.setOnClickListener { toggleService() }
         btnRegenPin.setOnClickListener { regeneratePin() }
         btnGrant.setOnClickListener { grantInstallPermission() }
-        findViewById<Button>(R.id.btnClear).setOnClickListener { clearPending() }
-
+        btnClear.setOnClickListener { clearPending() }
         tvPort.setOnClickListener { promptPort() }
 
         askForNotificationPermission()
@@ -131,6 +136,7 @@ class MainActivity : Activity() {
         btnToggle = findViewById(R.id.btnToggle)
         btnRegenPin = findViewById(R.id.btnRegenPin)
         btnGrant = findViewById(R.id.btnGrant)
+        btnClear = findViewById(R.id.btnClear)
         pendingContainer = findViewById(R.id.pendingContainer)
         installedContainer = findViewById(R.id.installedContainer)
         scroll = findViewById(R.id.scroll)
@@ -183,6 +189,49 @@ class MainActivity : Activity() {
         updateQr("http://$address:$port/?k=${config.pin}")
         renderPending()
         renderInstalled()
+        buildFocusStops()
+    }
+
+    /**
+     * The vertical D-pad chain, top to bottom. One entry is one stop: the buttons that sit
+     * side by side at the same height.
+     *
+     * Built by hand because both shortcuts are unavailable. The framework's geometric search
+     * cannot be trusted here - the row actions sit hard against the right edge while btnClear
+     * is a narrow left-aligned control, so the downward beam cast from 删除 never covers it and
+     * the button is unreachable with the remote. Rows are also created at runtime, so
+     * nextFocusDown cannot be declared in XML, and View.setNextFocusDown(View) is not part of
+     * the public SDK (only the *Id(int) XML variants are in android.jar).
+     */
+    private var focusStops: List<List<View>> = emptyList()
+
+    private fun buildFocusStops() {
+        focusStops = (listOf(listOf(btnToggle, btnRegenPin, btnGrant)) +
+            pendingStops +
+            listOf(listOf(btnClear)) +
+            installedStops)
+            .map { stop -> stop.filter { it.isFocusable } }
+            .filter { it.isNotEmpty() }
+    }
+
+    /** Moves focus one stop up or down. False means "not ours", so the default handling applies. */
+    private fun moveFocusVertically(down: Boolean): Boolean {
+        val chain = focusStops
+        if (chain.size < 2) return false
+        val focused = findViewById<View>(android.R.id.content)?.findFocus() ?: return false
+        val index = chain.indexOfFirst { stop -> stop.any { it === focused } }
+        if (index < 0) return false
+        val target = chain.getOrNull(if (down) index + 1 else index - 1) ?: return false
+        return target.firstOrNull { it.isShown }?.requestFocus() ?: false
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN &&
+            (event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN || event.keyCode == KeyEvent.KEYCODE_DPAD_UP)
+        ) {
+            if (moveFocusVertically(event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN)) return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     // ------------------------------------------------------------------ qr
@@ -297,6 +346,7 @@ class MainActivity : Activity() {
 
         withScrollKept {
             pendingContainer.removeAllViews()
+            pendingStops = emptyList()
 
             if (entries.isEmpty()) {
                 pendingContainer.addView(placeholder("从手机扫码推送到这里"))
@@ -304,6 +354,7 @@ class MainActivity : Activity() {
             }
 
             val inflater = LayoutInflater.from(this)
+            val stops = ArrayList<List<View>>(entries.size)
             for (entry in entries) {
                 val rowKey = "apk:${entry.fileName}"
                 val row = inflater.inflate(R.layout.item_apk, pendingContainer, false)
@@ -338,7 +389,9 @@ class MainActivity : Activity() {
                 }
                 bindRowFocusHighlight(row, installButton, deleteButton)
                 pendingContainer.addView(row)
+                stops.add(listOf(installButton, deleteButton))
             }
+            pendingStops = stops
             restoreFocus(pendingContainer, key)
         }
     }
@@ -355,6 +408,7 @@ class MainActivity : Activity() {
 
         withScrollKept {
             installedContainer.removeAllViews()
+            installedStops = emptyList()
 
             if (apps.isEmpty()) {
                 installedContainer.addView(placeholder("还没有装任何第三方应用"))
@@ -362,6 +416,7 @@ class MainActivity : Activity() {
             }
 
             val inflater = LayoutInflater.from(this)
+            val stops = ArrayList<List<View>>(apps.size)
             for (app in apps) {
                 val rowKey = "app:${app.packageName}"
                 val row = inflater.inflate(R.layout.item_app, installedContainer, false)
@@ -399,7 +454,9 @@ class MainActivity : Activity() {
                 }
                 bindRowFocusHighlight(row, launchButton, uninstallButton)
                 installedContainer.addView(row)
+                stops.add(listOf(launchButton, uninstallButton))
             }
+            installedStops = stops
             restoreFocus(installedContainer, key)
         }
     }
