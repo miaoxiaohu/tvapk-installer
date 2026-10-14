@@ -11,18 +11,39 @@
  *   - both switches can be clicked without throwing   <- the bug fixed last round
  *   - the pending list renders what the server really returned
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import http from "node:http";
 
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const url = process.argv[2] || "http://127.0.0.1:10080/";
+// Default must match start-harness.ps1's default port. 10080 is on Chromium's unsafe-port
+// blacklist, so the old default could only ever end at ERR_UNSAFE_PORT. No ?k= here on purpose:
+// test 1 asserts the PIN gate is up before any code is submitted.
+const url = process.argv[2] || "http://127.0.0.1:23456/";
 const shot = process.argv[3] || "";
 const PIN = process.argv[4] || "824193";
 const PORT = 9333;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Module scope so the FATAL path can clean up too. Left behind, an orphaned Chrome keeps a
+// connection open against the single-client harness and starves the next run.
+let chrome = null;
+
+/**
+ * Windows child.kill() only terminates the browser process; renderers and the
+ * zygote survive, stay connected to the single-client harness and starve the next run.
+ * Taskkill /T takes the whole tree.
+ */
+function killChrome() {
+  if (!chrome) return;
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+  } else {
+    try { chrome.kill(); } catch { /* already gone */ }
+  }
+}
 
 function get(path) {
   return new Promise((resolve, reject) => {
@@ -80,7 +101,7 @@ class CDP {
 
 async function main() {
   const userDir = process.env.TEMP + "\\tvapk-chrome-profile";
-  const chrome = spawn(CHROME, [
+  chrome = spawn(CHROME, [
     "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
     `--remote-debugging-port=${PORT}`, `--user-data-dir=${userDir}`,
     "--window-size=430,932",          // phone-shaped: this page is for phones
@@ -229,6 +250,19 @@ async function main() {
   check("网页已无「卸载全部」按钮", bulk === false, `uninstallAllBtn=${bulk}`);
 
   // 6. pending list reflects what the server really holds
+  //    Seed one APK first. The harness wipes its inbox on every start, so without this the
+  //    assertion silently depended on somebody having pushed a file by hand beforehand.
+  //    Seeded through the page rather than Node's fetch: the harness serves one client at a
+  //    time, so a second connection from Node competes with the browser for it.
+  const seeded = JSON.parse(await evalJs(
+    `fetch("/api/upload?filename=probe.apk&k=${PIN}", { method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: new Uint8Array([0x50, 0x4b, 0x03, 0x04]) })
+      .then(function(r){ return r.text(); })`));
+  check("测试台自举上传成功", seeded.ok === true, JSON.stringify(seeded));
+  await evalJs(`document.getElementById("refreshBtn").click()`);
+  await sleep(1200);
+
   const pendingRows = await evalJs(`document.querySelectorAll("#pending .row").length`);
   const pendingText = await evalJs(`document.getElementById("pending").innerText.replace(/\\s+/g," ").slice(0,120)`);
   check("待装列表已渲染", pendingRows > 0, `${pendingRows} 行: ${pendingText}`);
@@ -278,6 +312,22 @@ async function main() {
   ws.removeEventListener("message", onChooser);
   check("点击投放区会弹出文件选择器", chooserOpened, chooserOpened ? "fileChooserOpened 已触发" : "点击后没有任何反应");
 
+  // 8d. The chooser assertion above CANNOT catch this, because desktop Chrome happily opens
+  //     a picker for a 1x1 fully-transparent input. Mobile engines refuse to, so "tap does
+  //     nothing" passes 8c on the harness while failing on every real phone. Assert the input
+  //     is genuinely rendered instead of hidden with opacity/display.
+  const rendered = JSON.parse(await evalJs(`(function(){
+    const f = document.getElementById("file");
+    const cs = getComputedStyle(f);
+    const r = f.getBoundingClientRect();
+    return JSON.stringify({ display: cs.display, visibility: cs.visibility,
+                            opacity: cs.opacity, w: Math.round(r.width), h: Math.round(r.height) });
+  })()`));
+  check("文件输入框真实可见（移动端才会开选择器）",
+        rendered.display !== "none" && rendered.visibility !== "hidden" &&
+        parseFloat(rendered.opacity) > 0 && rendered.w > 0 && rendered.h > 0,
+        JSON.stringify(rendered));
+
   // 9. console clean
   check("无控制台错误 / 未捕获异常", consoleErrors.length === 0, consoleErrors.join(" | ") || "干净");
 
@@ -294,8 +344,12 @@ async function main() {
     consoleErrors.forEach(e => console.log("  " + e));
   }
 
-  chrome.kill();
+  killChrome();
   process.exit(failed.length ? 1 : 0);
 }
 
-main().catch(e => { console.error("FATAL " + e.message); process.exit(2); });
+main().catch(e => {
+  console.error("FATAL " + e.message);
+  killChrome();
+  process.exit(2);
+});

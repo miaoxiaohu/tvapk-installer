@@ -46,7 +46,13 @@
   #drop .big{font-size:40px;line-height:1}
   #drop .t{margin-top:10px;font-size:16px}
   #drop .s{margin-top:4px;font-size:13px;color:var(--dim)}
-  #file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+  /* Visually hidden, but deliberately NOT opacity:0 and NOT display:none. Mobile engines
+     (iOS Safari, several Android WebView builds) refuse to open the picker for an input they
+     consider unrendered, and a programmatic .click() on such an input is silently dropped -
+     the tap then looks like it did nothing. The clip pattern keeps the box painted at 1x1
+     so every engine still treats it as a real control. */
+  #file{position:absolute;width:1px;height:1px;padding:0;margin:-1px;border:0;
+    overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 
   /* rows */
   .row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;
@@ -463,17 +469,21 @@
   var drop = $("drop");
   var fileInput = $("file");
 
-  // The <label for="file"> forwards clicks natively, but that forwarding is not
-  // dependable across Android WebView builds. Trigger the input explicitly and
-  // preventDefault first, so the picker opens exactly once instead of twice.
-  drop.addEventListener("click", function(e){
-    if (e.target === fileInput) return;
-    e.preventDefault();
-    fileInput.click();
-  });
-
+  // No JS click handler on the drop zone, on purpose. <label for="file"> already forwards the
+  // tap natively and that is the only path every mobile engine honours; intercepting the click
+  // and calling fileInput.click() by hand is what made "tap to choose" do nothing on a phone.
   fileInput.onchange = function(){
-    if (fileInput.files && fileInput.files.length) enqueue(fileInput.files);
+    var picked;
+    try {
+      // FileList.forEach is absent on some Android WebView builds, and reading the list after
+      // the input has been reset can hand back an empty one - snapshot before either happens.
+      picked = fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+    } catch (e) {
+      picked = [];
+    }
+    if (!picked.length) { toast("没有读到文件，请重试", true); return; }
+    try { enqueue(picked); } catch (e) { toast("选取文件失败：" + e.message, true); }
+    // Reset only after enqueue has taken its own copies, or the upload reads a dead File.
     fileInput.value = "";
   };
 
