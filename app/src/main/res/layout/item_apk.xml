@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One pending APK.
+
+  The row itself is NOT focusable on purpose. Every action is an explicit button,
+  because "tap anywhere on the row" is invisible on a TV: the user pressing OK has no
+  way to know the row is the target, and once the D-pad steps onto the trailing button
+  the geometric focus search will not reliably bring it back to the row.
+
+  Left/right walks 安装 -> 删除, up/down walks between rows.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:background="@drawable/row_bg"
+    android:focusable="false"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:padding="10dp">
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:contentDescription="@string/label_pending" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/text_dim"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:textColor="@color/success"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btnInstall"
+        style="@style/TvButton.Primary"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginEnd="10dp"
+        android:minWidth="0dp"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:text="@string/action_install"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/btnDelete"
+        style="@style/TvButton.Danger"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:minWidth="0dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/action_delete"
+        android:textSize="14sp" />
+</LinearLayout>

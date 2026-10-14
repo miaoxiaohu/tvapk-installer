@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E1116">
+<title>电视推装</title>
+<style>
+  :root{
+    --bg:#0E1116; --surface:#171B22; --surface2:#1F242D; --outline:#2C333F;
+    --primary:#3D8BFF; --text:#E8ECF3; --dim:#8B95A5; --faint:#5C6675;
+    --success:#34C759; --warning:#FFB020; --danger:#FF5C5C;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  a{color:var(--primary)}
+  .wrap{max-width:720px;margin:0 auto;padding:16px 14px 60px}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .logo{width:44px;height:44px;border-radius:50%;background:var(--primary);flex:none;
+    display:grid;place-items:center;font-size:22px}
+  .who{flex:1;min-width:0}
+  .who b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .who small{color:var(--dim);font-size:13px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    background:var(--surface2);font-size:12px;color:var(--dim);flex:none}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .dot.on{background:var(--success)} .dot.err{background:var(--danger)}
+  .dot.wait{background:var(--warning)}
+
+  .card{background:var(--surface);border:1px solid var(--outline);border-radius:14px;
+    padding:14px;margin-bottom:14px}
+  .card > h2{margin:0 0 10px;font-size:14px;color:var(--dim);font-weight:600;letter-spacing:.04em;
+    display:flex;align-items:center;justify-content:space-between}
+  .card > h2 span{font-weight:400}
+
+  /* upload */
+  #drop{display:block;border:2px dashed var(--outline);border-radius:12px;padding:30px 16px;
+    text-align:center;transition:border-color .15s,background .15s;cursor:pointer;
+    -webkit-user-select:none;user-select:none}
+  #drop.hot{border-color:var(--primary);background:rgba(61,139,255,.08)}
+  #drop:active{border-color:var(--primary);background:rgba(61,139,255,.14)}
+  #drop span{display:block}
+  #drop .big{font-size:40px;line-height:1}
+  #drop .t{margin-top:10px;font-size:16px}
+  #drop .s{margin-top:4px;font-size:13px;color:var(--dim)}
+  #file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+
+  /* rows */
+  .row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;
+    background:var(--surface2);margin-top:8px}
+  .row .ic{width:42px;height:42px;border-radius:9px;flex:none;display:grid;place-items:center;
+    background:var(--outline);font-size:20px;overflow:hidden}
+  .row .ic img{width:100%;height:100%}
+  .row .body{flex:1;min-width:0}
+  .row .body b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .body small{color:var(--dim);font-size:12px;display:block;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;margin-left:6px;
+    vertical-align:1px}
+  .tag.ok{background:rgba(52,199,89,.16);color:var(--success)}
+  .tag.warn{background:rgba(255,176,32,.16);color:var(--warning)}
+  .tag.err{background:rgba(255,92,92,.16);color:var(--danger)}
+
+  button{font:inherit;border:0;border-radius:10px;padding:9px 15px;background:var(--surface2);
+    color:var(--text);cursor:pointer;white-space:nowrap;flex:none}
+  button:active{opacity:.7}
+  button.pri{background:var(--primary);color:#fff}
+  button.dan{background:rgba(255,92,92,.16);color:var(--danger)}
+  button.ghost{background:transparent;border:1px solid var(--outline);color:var(--dim)}
+  button:disabled{opacity:.45;cursor:default}
+
+  .bar{height:6px;border-radius:3px;background:var(--outline);overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;background:var(--primary);width:0;transition:width .2s}
+
+  .empty{color:var(--faint);font-size:14px;text-align:center;padding:22px 0}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 0;border-top:1px solid var(--outline)}
+  .toggle:first-of-type{border-top:0}
+  .toggle small{display:block;color:var(--dim);font-size:12px}
+  .switch{width:46px;height:27px;border-radius:999px;background:var(--outline);position:relative;
+    border:0;padding:0;flex:none;transition:background .15s}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+    background:#fff;transition:transform .15s}
+  .switch[aria-checked="true"]{background:var(--primary)}
+  .switch[aria-checked="true"]::after{transform:translateX(19px)}
+
+  input[type=search]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--outline);
+    background:var(--surface2);color:var(--text);font:inherit;margin-bottom:8px}
+
+  #toasts{position:fixed;left:0;right:0;bottom:16px;display:flex;flex-direction:column;
+    align-items:center;gap:8px;pointer-events:none;z-index:50}
+  .toast{background:#232A34;color:var(--text);padding:10px 16px;border-radius:10px;font-size:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.45);animation:pop .2s ease-out;max-width:88vw;text-align:center}
+  .toast.err{background:#3A1F22;color:#FFD9D9}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* pin gate */
+  #gate{position:fixed;inset:0;background:rgba(8,10,14,.94);display:none;place-items:center;z-index:100;
+    padding:24px}
+  #gate.on{display:grid}
+  .gatebox{background:var(--surface);border:1px solid var(--outline);border-radius:16px;
+    padding:22px;max-width:340px;width:100%}
+  .gatebox h1{margin:0 0 6px;font-size:19px}
+  .gatebox p{margin:0 0 14px;color:var(--dim);font-size:13px}
+  .gatebox input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--outline);
+    background:var(--surface2);color:var(--text);font:inherit;font-size:18px;letter-spacing:.25em;
+    text-align:center;margin-bottom:12px}
+  .gatebox button{width:100%;padding:12px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gatebox">
+    <h1>输入电视上的验证码</h1>
+    <p>电视屏幕「电视推装」应用里显示的 6 位数字</p>
+    <input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="off">
+    <button class="pri" id="pinSubmit">连接</button>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <div class="logo">↓</div>
+    <div class="who">
+      <b id="devName">电视</b>
+      <small id="devAddr"></small>
+    </div>
+    <span class="pill"><i class="dot" id="dot"></i><span id="statusText">连接中</span></span>
+  </header>
+
+  <div class="card">
+    <h2>推送 APK 到这台电视</h2>
+    <!--
+      The drop zone is a <label for="file"> rather than a div with a JS click handler,
+      because a display:none file input cannot be opened by script on iOS Safari.
+
+      Note there is deliberately NO accept=".apk" on the input. An extension-only filter
+      is handed to Android's DocumentsUI as the mime type
+      application/vnd.android.package-archive, and DocumentsUI has no APK category, so
+      the picker came up EMPTY and tapping looked like nothing happened. Drag-and-drop
+      bypasses accept entirely, which is why dragging worked and tapping did not.
+      Wrong files are rejected after the fact by the .apk check in enqueue().
+    -->
+    <label id="drop" for="file">
+      <span class="big">⬇︎</span>
+      <span class="t">点这里选 APK，或把文件拖进来</span>
+      <span class="s">支持多选 · 也可以把文件链接贴进来</span>
+    </label>
+    <input id="file" type="file" multiple>
+    <div class="grid2" style="margin-top:10px">
+      <button class="ghost" id="pasteBtn">粘贴下载链接</button>
+      <button class="ghost" id="refreshBtn">刷新</button>
+    </div>
+    <div id="queue"></div>
+  </div>
+
+  <div class="card">
+    <h2>待安装 <span id="pendingCount"></span></h2>
+    <div id="pending"><div class="empty">还没有收到 APK</div></div>
+    <button class="dan" id="clearBtn" style="width:100%;margin-top:10px">清空待安装</button>
+  </div>
+
+  <div class="card">
+    <h2>电视上的应用 <span id="installedCount"></span></h2>
+    <input type="search" id="appSearch" placeholder="搜索已安装的应用…">
+    <div id="installed"><div class="empty">加载中…</div></div>
+    <!--
+      No "uninstall everything" button on purpose. Bulk-uninstalling every third-party
+      app on a TV has no undo and cannot be recovered if it is fat-fingered, so removal
+      stays a deliberate one-app-at-a-time action below.
+    -->
+  </div>
+
+  <div class="card">
+    <h2>选项</h2>
+    <div class="toggle">
+      <div><b style="font-size:15px">收到就自动安装</b><small>上传完成后立刻弹出系统安装界面</small></div>
+      <button class="switch" id="swAuto" role="switch" aria-checked="false"></button>
+    </div>
+    <div class="toggle">
+      <div><b style="font-size:15px">需要验证码</b><small>关闭后同网段任何人可推送</small></div>
+      <button class="switch" id="swPin" role="switch" aria-checked="true"></button>
+    </div>
+  </div>
+
+  <p id="foot" style="color:var(--faint);font-size:12px;text-align:center"></p>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var TOKEN = "";
+  var info = null;
+  var installedCache = [];
+
+  // ---------------------------------------------------------------- helpers
+
+  function toast(msg, isErr){
+    var el = document.createElement("div");
+    el.className = "toast" + (isErr ? " err" : "");
+    el.textContent = msg;
+    $("toasts").appendChild(el);
+    setTimeout(function(){ el.remove(); }, isErr ? 4200 : 2400);
+  }
+
+  function humanSize(bytes){
+    if (bytes >= 1048576) return (bytes/1048576).toFixed(1) + " MB";
+    if (bytes >= 1024) return Math.round(bytes/1024) + " KB";
+    return bytes + " B";
+  }
+
+  function withKey(path){
+    return path + (path.indexOf("?") >= 0 ? "&" : "?") + "k=" + encodeURIComponent(TOKEN);
+  }
+
+  function api(path, opts){
+    opts = opts || {};
+    var init = { method: opts.method || "GET", headers: {} };
+    if (opts.body !== undefined){
+      init.headers["Content-Type"] = "application/json";
+      init.body = JSON.stringify(opts.body);
+    }
+    return fetch(withKey(path), init).then(function(res){
+      return res.text().then(function(text){
+        var data = {};
+        try { data = JSON.parse(text); } catch (e) { /* not json */ }
+        if (res.status === 401){ showGate(); throw new Error("验证码不正确"); }
+        if (res.status === 403 && data.needsPermission){
+          toast("电视还没授权「安装未知应用」", true);
+          throw new Error("needs permission");
+        }
+        if (!res.ok || data.ok === false){
+          throw new Error(data.error || ("HTTP " + res.status));
+        }
+        return data;
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------- gate
+
+  function showGate(){
+    $("gate").classList.add("on");
+    $("app").style.display = "none";
+    setTimeout(function(){ $("pinInput").focus(); }, 50);
+  }
+
+  function hideGate(){
+    $("gate").classList.remove("on");
+    $("app").style.display = "block";
+  }
+
+  function tryToken(token){
+    TOKEN = token || "";
+    return api("/api/info").then(function(data){
+      info = data;
+      try { localStorage.setItem("tvapk_pin", TOKEN); } catch (e) {}
+      hideGate();
+      renderInfo();
+      return refreshAll();
+    }).catch(function(err){
+      if (String(err.message).indexOf("验证码") >= 0) showGate();
+      throw err;
+    });
+  }
+
+  $("pinSubmit").onclick = function(){
+    var v = $("pinInput").value.trim();
+    if (!v) return;
+    tryToken(v).catch(function(){ /* gate already shown */ });
+  };
+  $("pinInput").addEventListener("keydown", function(e){
+    if (e.key === "Enter") $("pinSubmit").click();
+  });
+
+  // ------------------------------------------------------------------- info
+
+  function renderInfo(){
+    if (!info) return;
+    $("devName").textContent = info.device || "电视";
+    $("devAddr").textContent = info.baseUrl + " · 已收 " + (info.uploaded || 0) + " 个";
+
+    var dot = $("dot");
+    dot.className = "dot" + (info.status === 2 ? " on" : info.status === 3 ? " err" : info.status === 1 ? " wait" : "");
+    $("statusText").textContent = info.statusText || "未知";
+
+    $("swAuto").setAttribute("aria-checked", String(!!info.autoInstall));
+    $("swPin").setAttribute("aria-checked", String(!!info.pinRequired));
+
+    var bits = [];
+    if (info.addresses && info.addresses.length > 1) bits.push("其他地址 " + info.addresses.slice(1).join(", "));
+    if (!info.hasNetwork) bits.push("电视当前未联网");
+    if (!info.canInstallPackages) bits.push("电视未授权安装未知应用");
+    if (info.lastEvent) bits.push(info.lastEvent);
+    $("foot").textContent = bits.join(" · ");
+  }
+
+  // ---------------------------------------------------------------- refresh
+
+  function refreshAll(){
+    return Promise.all([loadInfo(), loadPending(), loadInstalled()]).catch(function(err){
+      console.warn(err);
+    });
+  }
+
+  function loadInfo(){
+    return api("/api/info").then(function(data){
+      info = data;
+      renderInfo();
+      var st = document.querySelector(".who small");
+      st.title = data.baseUrl;
+    });
+  }
+
+  function loadPending(){
+    return api("/api/apks").then(function(data){
+      var items = data.items || [];
+      $("pendingCount").textContent = items.length ? items.length + " 个" : "";
+      if (!items.length){
+        $("pending").innerHTML = '<div class="empty">还没有收到 APK</div>';
+        return;
+      }
+      $("pending").innerHTML = items.map(function(it){
+        var tag = "";
+        if (it.error) tag = '<span class="tag err">无法解析</span>';
+        else if (it.installed) tag = '<span class="tag ok">已装 ' + esc(it.installedVersion || "") + '</span>';
+        var sub = (it.versionName || it.name) + " · " + humanSize(it.size);
+        if (it.package) sub += " · " + it.package;
+        return '<div class="row" data-name="' + attr(it.name) + '">'
+          + '<div class="ic">📦</div>'
+          + '<div class="body"><b>' + esc(it.label) + tag + '</b><small>' + esc(sub) + '</small></div>'
+          + '<button class="pri" data-act="install">安装</button>'
+          + '<button class="dan" data-act="del">删</button>'
+          + '</div>';
+      }).join("");
+    });
+  }
+
+  function loadInstalled(){
+    return api("/api/installed").then(function(data){
+      installedCache = data.items || [];
+      $("installedCount").textContent = installedCache.length ? installedCache.length + " 个" : "";
+      renderInstalled($("appSearch").value || "");
+    });
+  }
+
+  function renderInstalled(filter){
+    var q = (filter || "").toLowerCase();
+    var items = installedCache.filter(function(a){
+      if (!q) return true;
+      return (a.label || "").toLowerCase().indexOf(q) >= 0 ||
+             (a.package || "").toLowerCase().indexOf(q) >= 0;
+    });
+    if (!items.length){
+      $("installed").innerHTML = '<div class="empty">' +
+        (q ? "没有匹配的应用" : "电视上还没有第三方应用") + '</div>';
+      return;
+    }
+    $("installed").innerHTML = items.map(function(a){
+      return '<div class="row" data-pkg="' + attr(a.package) + '">'
+        + '<div class="ic">📦</div>'
+        + '<div class="body"><b>' + esc(a.label) + '</b><small>' +
+          esc((a.versionName || "—") + " · " + a.package) + '</small></div>'
+        + '<button class="dan" data-act="uninstall">卸载</button>'
+        + '</div>';
+    }).join("");
+  }
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c];
+    });
+  }
+  function attr(s){ return esc(s).replace(/`/g, ""); }
+
+  // ---------------------------------------------------------------- actions
+
+  $("pending").addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-act]");
+    if (!btn) return;
+    var row = btn.closest(".row");
+    var name = row.getAttribute("data-name");
+    if (btn.getAttribute("data-act") === "install") doInstall(name, btn);
+    else doDelete(name, btn);
+  });
+
+  $("installed").addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-act]");
+    if (!btn) return;
+    var row = btn.closest(".row");
+    doUninstall(row.getAttribute("data-pkg"), btn);
+  });
+
+  function doInstall(name, btn){
+    btn.disabled = true;
+    api("/api/install", { method:"POST", body:{ name: name } })
+      .then(function(){ toast("已发送到电视，请在电视上确认"); })
+      .catch(function(err){ toast(err.message, true); })
+      .finally(function(){ btn.disabled = false; });
+  }
+
+  function doDelete(name, btn){
+    btn.disabled = true;
+    api("/api/delete", { method:"POST", body:{ name: name } })
+      .then(function(){ toast("已删除"); loadPending(); })
+      .catch(function(err){ toast(err.message, true); })
+      .finally(function(){ btn.disabled = false; });
+  }
+
+  function doUninstall(pkg, btn){
+    if (!window.confirm("卸载 " + pkg + " ?")) return;
+    btn.disabled = true;
+    api("/api/uninstall", { method:"POST", body:{ package: pkg } })
+      .then(function(){ toast("已发送卸载请求"); setTimeout(loadInstalled, 1200); })
+      .catch(function(err){ toast(err.message, true); btn.disabled = false; });
+  }
+
+  $("clearBtn").onclick = function(){
+    if (!window.confirm("删除电视上所有待安装的 APK ?")) return;
+    var names = Array.prototype.slice.call($("pending").querySelectorAll(".row"));
+    if (!names.length){ toast("没有待安装的 APK"); return; }
+    Promise.all(names.map(function(r){
+      return api("/api/delete", { method:"POST", body:{ name: r.getAttribute("data-name") } })
+        .catch(function(){});
+    })).then(function(){ toast("已清空"); loadPending(); });
+  };
+
+  $("swAuto").onclick = function(){
+    // `this` inside .then()/.catch() is undefined, so the element is captured here.
+    var el = this;
+    var next = el.getAttribute("aria-checked") !== "true";
+    el.setAttribute("aria-checked", String(next));
+    api("/api/settings", { method:"POST", body:{ autoInstall: next } })
+      .then(loadInfo)
+      .catch(function(err){ el.setAttribute("aria-checked", String(!next)); toast(err.message, true); });
+  };
+
+  $("swPin").onclick = function(){
+    // `this` inside .then() is undefined, so the element has to be captured here.
+    var el = this;
+    var next = el.getAttribute("aria-checked") !== "true";
+    el.setAttribute("aria-checked", String(next));
+    api("/api/settings", { method:"POST", body:{ pinEnabled: next } })
+      .then(loadInfo)
+      .catch(function(err){ el.setAttribute("aria-checked", String(!next)); toast(err.message, true); });
+  };
+
+  $("appSearch").oninput = function(){ renderInstalled(this.value); };
+  $("refreshBtn").onclick = function(){ refreshAll(); toast("已刷新"); };
+
+  // ----------------------------------------------------------------- upload
+
+  var drop = $("drop");
+  var fileInput = $("file");
+
+  // The <label for="file"> forwards clicks natively, but that forwarding is not
+  // dependable across Android WebView builds. Trigger the input explicitly and
+  // preventDefault first, so the picker opens exactly once instead of twice.
+  drop.addEventListener("click", function(e){
+    if (e.target === fileInput) return;
+    e.preventDefault();
+    fileInput.click();
+  });
+
+  fileInput.onchange = function(){
+    if (fileInput.files && fileInput.files.length) enqueue(fileInput.files);
+    fileInput.value = "";
+  };
+
+  ["dragenter","dragover"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); drop.classList.add("hot"); });
+  });
+  ["dragleave","drop"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); e.stopPropagation(); drop.classList.remove("hot"); });
+  });
+  drop.addEventListener("drop", function(e){
+    var dt = e.dataTransfer;
+    if (!dt) return;
+    var files = [];
+    if (dt.files && dt.files.length) files = Array.prototype.slice.call(dt.files);
+    // Mobile browsers expose nothing useful on drop; the tap-to-pick path covers them.
+    if (files.length) enqueue(files);
+  });
+  // Dropping anywhere else must not make the browser navigate away from the page.
+  window.addEventListener("dragover", function(e){ e.preventDefault(); });
+  window.addEventListener("drop", function(e){ e.preventDefault(); });
+
+  $("pasteBtn").onclick = function(){
+    var url = window.prompt("粘贴 APK 的直链（http/https）");
+    if (!url) return;
+    fetch(url).then(function(res){
+      if (!res.ok) throw new Error("下载失败 HTTP " + res.status);
+      var name = (url.split("/").pop().split("?")[0] || "app.apk");
+      if (!/\.apk$/i.test(name)) name += ".apk";
+      return res.blob().then(function(blob){
+        enqueue([new File([blob], name, { type:"application/vnd.android.package-archive" })]);
+      });
+    }).catch(function(err){ toast(err.message, true); });
+  };
+
+  var queue = [];
+  var queueSeq = 0;
+
+  function enqueue(files){
+    files.forEach(function(file){
+      if (!/\.apk$/i.test(file.name)){
+        toast(file.name + " 不是 .apk，已跳过", true);
+        return;
+      }
+      // The queue holds wrapper objects, not bare Files - renderQueue/uploadOne all
+      // read item.file / item.state / item.pct / item.id.
+      queue.push({ id: ++queueSeq, file: file, state: "等待中", pct: 0 });
+      renderQueue();
+      uploadNext();
+    });
+  }
+
+  function renderQueue(){
+    $("queue").innerHTML = queue.map(function(item){
+      return '<div class="row" data-id="' + item.id + '">'
+        + '<div class="ic">⬆︎</div>'
+        + '<div class="body"><b>' + esc(item.file.name) + '</b>'
+        + '<small>' + humanSize(item.file.size) + ' · ' + esc(item.state) + '</small>'
+        + '<div class="bar"><i style="width:' + Math.round(item.pct) + '%"></i></div>'
+        + '</div></div>';
+    }).join("");
+  }
+
+  function uploadNext(){
+    var next = null;
+    for (var i = 0; i < queue.length; i++){
+      if (queue[i].state === "等待中" || queue[i].state === "失败"){ next = queue[i]; break; }
+    }
+    if (!next) return;
+    next.state = "上传中";
+    next.pct = 0;
+    renderQueue();
+    uploadOne(next);
+  }
+
+  function uploadOne(item){
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", withKey("/api/upload?filename=" + encodeURIComponent(item.file.name)));
+    xhr.setRequestHeader("Content-Type", "application/octet-stream");
+    xhr.upload.onprogress = function(e){
+      if (e.lengthComputable){
+        item.pct = (e.loaded / e.total) * 100;
+        renderQueue();
+      }
+    };
+    xhr.onload = function(){
+      var data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (e) {}
+      if (xhr.status >= 200 && xhr.status < 300 && data.ok){
+        item.pct = 100;
+        item.state = data.autoInstall ? "已送达，安装中" : "已送达";
+        toast(item.file.name + " 已送达电视");
+        loadPending();
+      } else if (xhr.status === 401){
+        item.state = "验证码错误";
+        showGate();
+        return;
+      } else {
+        item.state = "失败：" + (data.error || ("HTTP " + xhr.status));
+        toast(item.state, true);
+      }
+      renderQueue();
+      queue = queue.filter(function(x){ return x !== item || item.state.indexOf("失败") === 0; });
+      renderQueue();
+      setTimeout(uploadNext, 120);
+    };
+    xhr.onerror = function(){
+      item.state = "网络错误";
+      item.pct = 0;
+      toast("上传失败，请确认手机和电视在同一 Wi-Fi", true);
+      renderQueue();
+      setTimeout(uploadNext, 400);
+    };
+    xhr.send(item.file);
+  }
+
+  // -------------------------------------------------------------------- go
+
+  var fromUrl = new URLSearchParams(location.search).get("k");
+  var saved = "";
+  try { saved = localStorage.getItem("tvapk_pin") || ""; } catch (e) {}
+
+  tryToken(fromUrl || saved).catch(function(){
+    showGate();
+  });
+
+  setInterval(function(){
+    if (!$("gate").classList.contains("on")) refreshAll();
+  }, 4000);
+
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden) refreshAll();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Primary action button. The focused state lightens the fill as well as adding a ring:
+  a ring alone on an already-saturated blue is too weak to spot from a sofa, and this
+  is the button that holds focus the first time the app opens.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/primary_dim" />
+            <stroke android:width="3dp" android:color="@color/focus_ring" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/primary_focus" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/primary_dim" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

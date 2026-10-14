@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The lit appearance of a list row: same ring the buttons use, so "this is selected"
+     means the same thing everywhere on screen. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/surface_alt" />
+    <stroke android:width="3dp" android:color="@color/focus_ring" />
+    <corners android:radius="10dp" />
+</shape>

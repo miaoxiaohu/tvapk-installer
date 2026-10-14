@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_dim</item>
+        <item name="android:windowDisablePreview">false</item>
+    </style>
+
+    <!-- Buttons must read clearly from a sofa at 3 metres. -->
+    <style name="TvButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingEnd">18dp</item>
+        <!-- Must be the state selector, not the flat shape, or D-pad focus is invisible. -->
+        <item name="android:background">@drawable/btn_focused</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">false</item>
+        <!-- One line only: a wrapped label would overflow the fixed 52dp height. -->
+        <item name="android:maxLines">1</item>
+        <!-- A large minWidth overrides layout_weight and makes weighted rows ragged. -->
+        <item name="android:minWidth">96dp</item>
+    </style>
+
+    <style name="TvButton.Primary">
+        <item name="android:background">@drawable/btn_bg_primary</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+    </style>
+
+    <style name="TvButton.Danger">
+        <item name="android:background">@drawable/btn_bg_danger</item>
+        <item name="android:textColor">@color/danger_btn_text</item>
+    </style>
+
+    <style name="Card">
+        <item name="android:background">@drawable/card_bg</item>
+        <item name="android:padding">18dp</item>
+        <item name="android:layout_marginBottom">14dp</item>
+    </style>
+
+    <style name="Caption">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+
+    <style name="Value">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:typeface">monospace</item>
+    </style>
+
+    <style name="Value.Small">
+        <item name="android:textSize">18sp</item>
+    </style>
+</resources>

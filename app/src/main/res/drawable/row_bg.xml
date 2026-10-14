@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Idle state for a list row. Deliberately flatter and border-less than a button:
+  rows are the passive list, buttons are the actions. If rows and buttons share the
+  same resting look, every row in a long list reads as "already selected".
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/row_focus_ring" android:state_focused="true" />
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/row_rest" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

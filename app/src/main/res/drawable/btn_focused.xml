@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Neutral button. The focused state is a thick bright RING, not a bright fill:
+  a light fill plus the style's light text colour would be unreadable from a sofa.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- pressed first, for the same StateListDrawable reason as the other buttons. -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/outline" />
+            <stroke android:width="3dp" android:color="@color/focus_ring" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surface_alt" />
+            <stroke android:width="3dp" android:color="@color/focus_ring" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surface_alt" />
+            <stroke android:width="1dp" android:color="@color/outline" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

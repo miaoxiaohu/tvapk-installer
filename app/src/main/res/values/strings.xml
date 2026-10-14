@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">电视推装</string>
+
+    <string name="status_running">服务运行中</string>
+    <string name="status_stopped">服务已停止</string>
+    <string name="status_starting">正在启动…</string>
+    <string name="status_error">启动失败</string>
+
+    <string name="label_address">电视地址</string>
+    <string name="label_url">手机 / 电脑打开</string>
+    <string name="label_pin">验证码</string>
+    <string name="label_port">端口</string>
+    <string name="label_pending">待安装 APK</string>
+    <string name="label_installed">已装应用</string>
+
+    <string name="action_start">开启服务</string>
+    <string name="action_stop">关闭服务</string>
+    <!-- Action-row labels are all 4 characters on purpose: three equal-weight buttons whose
+     labels differ in length stop looking aligned, and the longest one is the first to get
+     clipped once the system font scale goes up. -->
+<string name="action_regen_pin">换验证码</string>
+    <string name="action_toggle_pin">关闭验证码</string>
+    <string name="action_enable_pin">开启验证码</string>
+    <string name="action_grant">安装授权</string>
+    <string name="action_clear">清空待装列表</string>
+    <string name="action_refresh">刷新</string>
+    <string name="action_back">返回</string>
+    <string name="action_install">安装</string>
+    <string name="action_delete">删除</string>
+    <string name="action_launch">打开</string>
+    <string name="action_uninstall">卸载</string>
+
+    <string name="hint_tv_ready">用手机相机扫上面的二维码，选中 APK 即可推到这台电视</string>
+    <string name="hint_port_busy">端口 %1$d 被占用，换一个端口再试</string>
+    <string name="hint_grant_needed">需要先授权「安装未知应用」，否则系统会拦截</string>
+
+    <string name="notif_channel_name">推装服务</string>
+    <string name="notif_title">电视推装服务运行中</string>
+    <string name="notif_text">%1$s · 手机扫码即可推送 APK</string>
+
+    <string name="toast_pin_on">验证码已开启：%1$s</string>
+    <string name="toast_pin_off">验证码已关闭</string>
+    <string name="toast_pin_new">新验证码：%1$s</string>
+    <string name="toast_cleared">已清空</string>
+    <string name="toast_deleted">已删除 %1$s</string>
+    <string name="toast_no_apk">没有可删除的 APK</string>
+</resources>

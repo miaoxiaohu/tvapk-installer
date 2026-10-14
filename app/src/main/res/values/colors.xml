@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0E1116</color>
+    <color name="surface">#FF171B22</color>
+    <color name="surface_alt">#FF1F242D</color>
+    <color name="outline">#FF2C333F</color>
+
+    <color name="primary">#FF3D8BFF</color>
+    <color name="primary_dim">#FF2A6BD6</color>
+
+    <color name="text_primary">#FFE8ECF3</color>
+    <color name="text_dim">#FF8B95A5</color>
+    <color name="text_faint">#FF5C6675</color>
+
+    <color name="success">#FF34C759</color>
+    <color name="warning">#FFFFB020</color>
+    <color name="danger">#FFFF5C5C</color>
+
+    <color name="focus_ring">#FF7FB2FF</color>
+    <color name="scrim">#CC000000</color>
+
+    <!-- Resting shades. A list full of items must not shout before any of them is picked. -->
+    <color name="row_rest">#FF1B212A</color>
+    <color name="danger_rest">#FF3A2027</color>
+    <color name="danger_rest_edge">#FF6B3038</color>
+    <color name="danger_rest_text">#FFE59AA2</color>
+    <color name="primary_focus">#FF6FA5FF</color>
+</resources>

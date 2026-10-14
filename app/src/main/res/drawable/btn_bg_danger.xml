@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Destructive button.
+  The resting state is deliberately MUTED. It used to be a full-saturation red block
+  with white text, which made every 删除/卸载 in a list look permanently selected and
+  drowned out the one element that actually had focus. Emphasis now goes to the
+  focused state only.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- state_pressed must precede state_focused: StateListDrawable takes the first
+         match, so a focused-then-pressed button would otherwise never show "pressed". -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/danger" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/danger" />
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/danger_rest" />
+            <stroke android:width="1dp" android:color="@color/danger_rest_edge" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>
